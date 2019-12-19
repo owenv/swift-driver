@@ -556,6 +556,16 @@ extension Driver {
       return
     }
 
+    if parsedOptions.contains(.printTargetInfo) {
+      var commandLine: [Job.ArgTemplate] = []
+      commandLine.appendFlags("swift", "-frontend", "-print-target-info")
+      try commandLine.appendLast(.target, from: &parsedOptions)
+      try commandLine.appendLast(.sdk, from: &parsedOptions)
+      try commandLine.appendLast(.resourceDir, from: &parsedOptions)
+      let swiftCompiler = try getSwiftCompilerPath()
+      return try exec(path: swiftCompiler.pathString, args: try commandLine.map{ try resolver.resolve($0) })
+    }
+
     // Plan the build.
     let jobs = try planBuild()
     if jobs.isEmpty { return }
