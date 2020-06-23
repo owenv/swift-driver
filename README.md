@@ -11,6 +11,8 @@ The `swift-driver` project is a new implementation of the Swift compiler driver 
 
 ## Getting Started
 
+Note: Building `swift-driver` requires Swift 5.3 or above. If you're developing in Xcode, you must use the Xcode 12.0 beta.
+
 The preferred way to build `swift-driver` is to use the Swift package manager:
 
 ```
