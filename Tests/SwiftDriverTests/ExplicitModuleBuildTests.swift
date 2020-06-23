@@ -108,10 +108,12 @@ final class ExplicitModuleBuildTests: XCTestCase {
       var driver = try Driver(args: ["swiftc", "-driver-print-module-dependencies-jobs",
                                      "test.swift"])
       let pcmArgs = ["-Xcc","-target","-Xcc","x86_64-apple-macosx10.15"]
+      let data = try Data(contentsOf: Bundle.module.url(forResource: "TestInputs/ExplicitModuleBuilds/FastDependencyScannerOutput",
+                                                        withExtension: "json")!)
       let moduleDependencyGraph =
             try JSONDecoder().decode(
               InterModuleDependencyGraph.self,
-              from: ModuleDependenciesInputs.fastDependencyScannerOutput.data(using: .utf8)!)
+              from: data)
       driver.explicitModuleBuildHandler = try ExplicitModuleBuildHandler(dependencyGraph: moduleDependencyGraph,
                                                                          toolchain: driver.toolchain)
       let modulePrebuildJobs =
@@ -154,9 +156,8 @@ final class ExplicitModuleBuildTests: XCTestCase {
       var pcmArgs9 = ["-Xcc","-target","-Xcc","x86_64-apple-macosx10.9"]
       var pcmArgs15 = ["-Xcc","-target","-Xcc","x86_64-apple-macosx10.15"]
 
-      let packageRootPath = URL(fileURLWithPath: #file).pathComponents
-          .prefix(while: { $0 != "Tests" }).joined(separator: "/").dropFirst()
-      let testInputsPath = packageRootPath + "/TestInputs"
+
+      let testInputsPath = Bundle.module.resourcePath!
       let cHeadersPath : String = testInputsPath + "/ExplicitModuleBuilds/CHeaders"
       let swiftModuleInterfacesPath : String = testInputsPath + "/ExplicitModuleBuilds/Swift"
       var driver = try Driver(args: ["swiftc",

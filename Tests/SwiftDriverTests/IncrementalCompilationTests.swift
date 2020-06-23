@@ -15,7 +15,8 @@ import SwiftDriver
 
 final class IncrementalCompilationTests: XCTestCase {
   func testInputInfoMapReading() throws {
-    let inputInfoMap = try! InputInfoMap(contents: Inputs.inputInfoMap)
+    let contents = try String(contentsOf: Bundle.module.url(forResource: "TestInputs/sandbox-master", withExtension: "swiftdeps")!)
+    let inputInfoMap = try! InputInfoMap(contents: contents)
     XCTAssertEqual(inputInfoMap.swiftVersion,
       "Apple Swift version 5.1 (swiftlang-1100.0.270.13 clang-1100.0.33.7)")
     XCTAssertEqual(inputInfoMap.argsHash, "abbbfbcaf36b93e58efaadd8271ff142")
@@ -37,7 +38,8 @@ final class IncrementalCompilationTests: XCTestCase {
   }
 
   func testReadSourceFileDependencyGraph() throws {
-    let graph = try SourceFileDependencyGraph(contents: Inputs.fineGrainedSourceFileDependencyGraph)
+    let contents = try String(contentsOf: Bundle.module.url(forResource: "TestInputs/FineGrainedSourceFileDependencyGraphyaml", withExtension: "swiftdeps")!)
+    let graph = try SourceFileDependencyGraph(contents: contents)
 
     graph.verify()
 
