@@ -689,6 +689,15 @@ final class SwiftDriverTests: XCTestCase {
     }
   }
 
+  func testEphemeralPathResolution() throws {
+    let argsResolver = try ArgsResolver(fileSystem: localFileSystem)
+    let path: VirtualPath = .ephemeral(.init("ephemeral_file.txt"), contents: "Hello, world".data(using: .utf8)!)
+    let string = try argsResolver.resolve(.path(path))
+    XCTAssertTrue(string.hasSuffix("ephemeral_file.txt"))
+    let contents = try localFileSystem.readFileContents(.init(string))
+    XCTAssertEqual(contents.validDescription, "Hello, world")
+  }
+
   func testLinking() throws {
     var env = ProcessEnv.vars
     env["SWIFT_DRIVER_TESTS_ENABLE_EXEC_PATH_FALLBACK"] = "1"

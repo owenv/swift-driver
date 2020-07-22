@@ -231,8 +231,7 @@ extension Driver {
                                 recordedInputModificationDates: recordedInputModificationDates)
 
     explicitModuleBuildHandler = try ExplicitModuleBuildHandler(dependencyGraph: dependencyGraph,
-                                                                toolchain: toolchain,
-                                                                fileSystem: fileSystem)
+                                                                toolchain: toolchain)
     return try explicitModuleBuildHandler!.generateExplicitModuleDependenciesBuildJobs()
   }
 

@@ -60,19 +60,26 @@ public struct ArgsResolver {
       return flag
 
     case .path(let path):
-      // Return the path from the temporary directory if this is a temporary file.
-      if path.isTemporary {
+      switch path {
+      case .absolute, .relative, .standardInput, .standardOutput:
+        // If there was a path mapping, use it.
+        if let actualPath = pathMapping[path] {
+          return actualPath.pathString
+        }
+
+        // Otherwise, return the path.
+        return path.name
+      case .temporary:
+        // Return the path from the temporary directory if this is a temporary file.
         let actualPath = temporaryDirectory.appending(component: path.name)
         return actualPath.name
-      }
-
-      // If there was a path mapping, use it.
-      if let actualPath = pathMapping[path] {
+      case .ephemeral(let name, contents: let contents):
+        // Write the contents to the temporary directory, then return the path.
+        // FIXME: What if temporaryDirectory isn't an AbsolutePath?
+        let actualPath = temporaryDirectory.absolutePath!.appending(name)
+        try fileSystem.writeFileContents(actualPath, bytes: ByteString(contents))
         return actualPath.pathString
       }
-
-      // Otherwise, return the path.
-      return path.name
     }
   }
 

@@ -10,6 +10,7 @@
 //
 //===----------------------------------------------------------------------===//
 import TSCBasic
+import Foundation
 
 /// A virtual path.
 public enum VirtualPath: Hashable {
@@ -29,6 +30,9 @@ public enum VirtualPath: Hashable {
   /// A temporary file with the given name.
   case temporary(RelativePath)
 
+  /// Am ephemeral file with the given name and contents.
+  case ephemeral(RelativePath, contents: Data)
+
   /// Form a virtual path which may be either absolute or relative.
   public init(path: String) throws {
     if let absolute = try? AbsolutePath(validating: path) {
@@ -45,7 +49,7 @@ public enum VirtualPath: Hashable {
   /// The extension of this path, for relative or absolute paths.
   public var `extension`: String? {
     switch self {
-    case .relative(let path), .temporary(let path):
+    case .relative(let path), .temporary(let path), .ephemeral(let path, contents: _):
       return path.extension
 
     case .absolute(let path):
@@ -61,7 +65,7 @@ public enum VirtualPath: Hashable {
     switch self {
     case .relative, .absolute, .standardInput, .standardOutput:
       return false
-    case .temporary:
+    case .temporary, .ephemeral:
       return true
     }
   }
@@ -70,7 +74,7 @@ public enum VirtualPath: Hashable {
     switch self {
     case let .absolute(absolutePath):
       return absolutePath
-    case .relative, .temporary, .standardInput, .standardOutput:
+    case .relative, .temporary, .standardInput, .standardOutput, .ephemeral:
       return nil
     }
   }
@@ -80,7 +84,7 @@ public enum VirtualPath: Hashable {
     switch self {
     case .absolute(let path):
       return path.basename
-    case .relative(let path), .temporary(let path):
+    case .relative(let path), .temporary(let path), .ephemeral(let path, contents: _):
       return path.basename
     case .standardInput, .standardOutput:
       return ""
@@ -92,7 +96,7 @@ public enum VirtualPath: Hashable {
     switch self {
     case .absolute(let path):
       return path.basenameWithoutExt
-    case .relative(let path), .temporary(let path):
+    case .relative(let path), .temporary(let path), .ephemeral(let path, contents: _):
       return path.basenameWithoutExt
     case .standardInput, .standardOutput:
       return ""
@@ -108,8 +112,8 @@ public enum VirtualPath: Hashable {
       return .relative(RelativePath(path.dirname))
     case .temporary(let path):
       return .temporary(RelativePath(path.dirname))
-    case .standardInput, .standardOutput:
-      assertionFailure("Can't get directory of stdin/stdout")
+    case .standardInput, .standardOutput, .ephemeral:
+      assertionFailure("Can't get directory of stdin/stdout/ephemeral paths")
       return self
     }
   }
@@ -125,8 +129,8 @@ public enum VirtualPath: Hashable {
       return .relative(path.appending(component: component))
     case .temporary(let path):
       return .temporary(path.appending(component: component))
-    case .standardInput, .standardOutput:
-      assertionFailure("Can't append path component to standard in/out")
+    case .standardInput, .standardOutput, .ephemeral:
+      assertionFailure("Can't append path component to standard in/out/ephemeral paths")
       return self
     }
   }
@@ -142,8 +146,8 @@ public enum VirtualPath: Hashable {
       return .relative(RelativePath(path.pathString + suffix))
     case let .temporary(path):
       return .temporary(RelativePath(path.pathString + suffix))
-    case .standardInput, .standardOutput:
-      assertionFailure("Can't append path component to standard in/out")
+    case .standardInput, .standardOutput, .ephemeral:
+      assertionFailure("Can't append path component to standard in/out/ephemeral paths")
       return self
     }
   }
@@ -151,7 +155,7 @@ public enum VirtualPath: Hashable {
 
 extension VirtualPath: Codable {
   private enum CodingKeys: String, CodingKey {
-    case relative, absolute, standardInput, standardOutput, temporary
+    case relative, absolute, standardInput, standardOutput, temporary, ephemeralPath, ephemeralContents
   }
 
   public func encode(to encoder: Encoder) throws {
@@ -170,6 +174,9 @@ extension VirtualPath: Codable {
     case .temporary(let a1):
       var unkeyedContainer = container.nestedUnkeyedContainer(forKey: .temporary)
       try unkeyedContainer.encode(a1)
+    case .ephemeral(let path, contents: let contents):
+      try container.encode(path, forKey: .ephemeralPath)
+      try container.encode(contents, forKey: .ephemeralContents)
     }
   }
 
@@ -195,6 +202,9 @@ extension VirtualPath: Codable {
       var unkeyedValues = try values.nestedUnkeyedContainer(forKey: key)
       let a1 = try unkeyedValues.decode(RelativePath.self)
       self = .temporary(a1)
+    case .ephemeralPath, .ephemeralContents:
+      self = .ephemeral(try values.decode(RelativePath.self, forKey: .ephemeralPath),
+                        contents: try values.decode(Data.self, forKey: .ephemeralContents))
     }
   }
 }
@@ -212,6 +222,9 @@ extension VirtualPath: CustomStringConvertible {
       return "-"
 
     case .temporary(let path):
+      return path.pathString
+
+    case .ephemeral(let path, contents: _):
       return path.pathString
     }
   }
@@ -254,6 +267,8 @@ extension TSCBasic.FileSystem {
       return try f(.init(cwd, relPath))
     case let .temporary(relPath):
       throw FileSystemError.cannotResolveTempPath(relPath)
+    case .ephemeral(let path, contents: _):
+      throw FileSystemError.cannotResolveTempPath(path)
     case .standardInput:
       throw FileSystemError.cannotResolveStandardInput
     case .standardOutput:
