@@ -102,7 +102,7 @@ extension ExplicitModuleBuildHandler {
           if dependencyGraph.modules[moduleId] == nil {
             dependencyGraph.modules[moduleId] = moduleInfo
           }
-        case .swiftPlaceholder(_):
+        case .swiftPlaceholder(_), .swiftPackageProduct(_):
           try insertOrReplaceModule(moduleId: moduleId, moduleInfo: moduleInfo)
       }
     }

@@ -119,6 +119,10 @@ public typealias ExternalDependencyArtifactMap =
   /// - Generate Job: S1
   ///
   mutating public func generateExplicitModuleDependenciesBuildJobs() throws -> [Job] {
+
+    // TODO: invoke SPM with product descriptions from package dependencies and
+    // merge the result into the externalDependencyArtifactMap.
+
     // Resolve placeholder dependencies in the dependency graph, if any.
     if (!externalDependencyArtifactMap.isEmpty) {
       try resolvePlaceholderDependencies()
@@ -332,6 +336,8 @@ public typealias ExternalDependencyArtifactMap =
                                        swiftDependencyArtifacts: &swiftDependencyArtifacts)
         case .swiftPlaceholder:
           fatalError("Unresolved placeholder dependencies at planning stage: \(dependencyId) of \(moduleId)")
+        case .swiftPackageProduct:
+          fatalError("Unresolved package product dependency at planning stage: \(dependencyId) of \(moduleId)")
       }
     }
   }

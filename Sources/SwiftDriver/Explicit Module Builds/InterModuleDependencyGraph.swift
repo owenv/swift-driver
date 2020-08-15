@@ -15,12 +15,14 @@ import Foundation
 public enum ModuleDependencyId: Hashable {
   case swift(String)
   case swiftPlaceholder(String)
+  case swiftPackageProduct(String)
   case clang(String)
 
   public var moduleName: String {
     switch self {
     case .swift(let name): return name
     case .swiftPlaceholder(let name): return name
+    case .swiftPackageProduct(let name): return name
     case .clang(let name): return name
     }
   }
@@ -30,6 +32,7 @@ extension ModuleDependencyId: Codable {
   enum CodingKeys: CodingKey {
     case swift
     case swiftPlaceholder
+    case swiftPackageProduct
     case clang
   }
 
@@ -43,8 +46,13 @@ extension ModuleDependencyId: Codable {
         let moduleName =  try container.decode(String.self, forKey: .swiftPlaceholder)
         self = .swiftPlaceholder(moduleName)
       } catch {
-        let moduleName =  try container.decode(String.self, forKey: .clang)
-        self = .clang(moduleName)
+        do {
+          let moduleName =  try container.decode(String.self, forKey: .swiftPackageProduct)
+          self = .swiftPackageProduct(moduleName)
+        } catch {
+          let moduleName =  try container.decode(String.self, forKey: .clang)
+          self = .clang(moduleName)
+        }
       }
     }
   }
@@ -56,6 +64,8 @@ extension ModuleDependencyId: Codable {
         try container.encode(moduleName, forKey: .swift)
       case .swiftPlaceholder(let moduleName):
         try container.encode(moduleName, forKey: .swift)
+      case .swiftPackageProduct(let moduleName):
+        try container.encode(moduleName, forKey: .swiftPackageProduct)
       case .clang(let moduleName):
         try container.encode(moduleName, forKey: .clang)
     }
@@ -108,6 +118,12 @@ public struct SwiftPlaceholderModuleDetails: Codable {
   var moduleSourceInfoPath: String?
 }
 
+/// Details specific to SwiftPM package products.
+public struct SwiftPackageProductModuleDetails: Codable {
+  /// Description of the package product.
+  var productDescription: String
+}
+
 /// Details specific to Clang modules.
 public struct ClangModuleDetails: Codable {
   /// The path to the module map used to build this module.
@@ -143,6 +159,9 @@ public struct ModuleInfo: Codable {
     /// module doc path and source info paths.
     case swiftPlaceholder(SwiftPlaceholderModuleDetails)
 
+    /// SwiftPM package products have a description interpreted by SPM.
+    case swiftPackageProduct(SwiftPackageProductModuleDetails)
+
     /// Clang modules are built from a module map file.
     case clang(ClangModuleDetails)
   }
@@ -152,6 +171,7 @@ extension ModuleInfo.Details: Codable {
   enum CodingKeys: CodingKey {
     case swift
     case swiftPlaceholder
+    case swiftPackageProduct
     case clang
   }
 
@@ -165,8 +185,13 @@ extension ModuleInfo.Details: Codable {
         let details = try container.decode(SwiftPlaceholderModuleDetails.self, forKey: .swiftPlaceholder)
         self = .swiftPlaceholder(details)
       } catch {
-        let details = try container.decode(ClangModuleDetails.self, forKey: .clang)
-        self = .clang(details)
+        do {
+          let details = try container.decode(SwiftPackageProductModuleDetails.self, forKey: .swiftPackageProduct)
+          self = .swiftPackageProduct(details)
+        } catch {
+          let details = try container.decode(ClangModuleDetails.self, forKey: .clang)
+          self = .clang(details)
+        }
       }
     }
   }
@@ -178,6 +203,8 @@ extension ModuleInfo.Details: Codable {
         try container.encode(details, forKey: .swift)
       case .swiftPlaceholder(let details):
         try container.encode(details, forKey: .swiftPlaceholder)
+      case .swiftPackageProduct(let details):
+        try container.encode(details, forKey: .swiftPackageProduct)
       case .clang(let details):
         try container.encode(details, forKey: .clang)
     }

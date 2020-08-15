@@ -50,8 +50,8 @@ private func checkExplicitModuleBuildJob(job: Job,
                          type: .clangModuleMap)
       XCTAssertEqual(job.kind, .generatePCM)
       XCTAssertTrue(job.inputs.contains(moduleMapPath))
-    case .swiftPlaceholder(_):
-      XCTFail("Placeholder dependency found.")
+    case .swiftPlaceholder(_), .swiftPackageProduct(_):
+      XCTFail("Package/Placeholder dependency found.")
   }
   // Ensure the frontend was prohibited from doing implicit module builds
   XCTAssertTrue(job.commandLine.contains(.flag(String("-disable-implicit-swift-modules"))))
@@ -103,8 +103,8 @@ private func checkExplicitModuleBuildJobDependencies(job: Job,
                         .flag(String("-fmodule-file=\(clangDependencyModulePathString)"))))
         XCTAssertTrue(job.commandLine.contains(
                         .flag(String("-fmodule-map-file=\(clangDependencyDetails.moduleMapPath)"))))
-      case .swiftPlaceholder(_):
-        XCTFail("Placeholder dependency found.")
+      case .swiftPlaceholder(_), .swiftPackageProduct(_):
+        XCTFail("Placeholder/Package dependency found.")
     }
 
     // Ensure all transitive dependencies got added as well.
@@ -210,8 +210,8 @@ final class ExplicitModuleBuildTests: XCTestCase {
             continue
           case .clang(_):
             continue
-          case .swiftPlaceholder(_):
-            XCTFail("Placeholder dependency found.")
+          case .swiftPlaceholder(_), .swiftPackageProduct(_):
+            XCTFail("Placeholder/Package dependency found.")
         }
       }
 
