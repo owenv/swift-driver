@@ -91,6 +91,15 @@ extension Driver {
       commandLine.appendFlag(.disableObjcInterop)
     }
 
+    // Add flags for C++ interop.
+    if parsedOptions.hasArgument(.enableExperimentalCxxInterop) {
+      commandLine.appendFlag(.enableCxxInterop)
+    }
+    if let arg = parsedOptions.getLastArgument(.experimentalCxxStdlib) {
+      commandLine.appendFlag(.Xcc)
+      commandLine.appendFlag("-stdlib=\(arg.asSingle)")
+    }
+
     // Handle the CPU and its preferences.
     try commandLine.appendLast(.targetCpu, from: &parsedOptions)
 
@@ -119,7 +128,6 @@ extension Driver {
     try commandLine.appendLast(.enableLibraryEvolution, from: &parsedOptions)
     try commandLine.appendLast(.enableTesting, from: &parsedOptions)
     try commandLine.appendLast(.enablePrivateImports, from: &parsedOptions)
-    try commandLine.appendLast(.enableCxxInterop, from: &parsedOptions)
     try commandLine.appendLast(in: .g, from: &parsedOptions)
     try commandLine.appendLast(.debugInfoFormat, from: &parsedOptions)
     try commandLine.appendLast(.importUnderlyingModule, from: &parsedOptions)
